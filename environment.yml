@@ -7,14 +7,15 @@ dependencies:
   - python=3.10.4
   - pip
   - pip:
-    - gpjax
-    - jax
+    - gpjax==0.6.7
+    - jax==0.4.9
     - jaxkern
-    - jaxlib
+    - jaxlib==0.4.7
     - jaxlinop
     - jaxtyping
     - jaxutils
     - jinja2
+    - flask
     - markupsafe
     - ml-collections
     - matplotlib

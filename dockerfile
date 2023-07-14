@@ -21,6 +21,7 @@ RUN yum -y install bzip2 && \
     echo "source /root/micromamba/etc/profile.d/mamba.sh" >> ~/.bashrc && \
     /root/.local/bin/micromamba env create -f /root/environment.yml && \
     echo "micromamba activate benchmark_env" >> ~/.bashrc
+RUN yum -y install sqlite
 
 ENV PATH=/root/micromamba/envs/benchmark_env/bin:${PATH}
 
@@ -28,5 +29,11 @@ WORKDIR /root/mesh_generation
 RUN git clone https://github.com/damogranlabs/classy_blocks.git 
 WORKDIR classy_blocks
 RUN git checkout 7aad805
+WORKDIR /root
+# Set environment variables
+ENV FLASK_APP=reactor_design_problem/cross_section.py 
+ENV FLASK_RUN_HOST=0.0.0.0
+ENV FLASK_RUN_PORT=5001
 
-CMD ["/bin/bash", "-c", "source ~/.bashrc && exec /bin/bash"]
+# Run the command to start uWSGI
+CMD ["flask", "run"]
