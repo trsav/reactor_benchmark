@@ -31,7 +31,7 @@ WORKDIR classy_blocks
 RUN git checkout 7aad805
 WORKDIR /root
 # Set environment variables
-ENV FLASK_APP=reactor_design_problem/cross_section.py 
+ENV FLASK_APP=reactor_design_problem/functions.py 
 ENV FLASK_RUN_HOST=0.0.0.0
 ENV FLASK_RUN_PORT=5001
 

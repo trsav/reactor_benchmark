@@ -33,6 +33,7 @@ import matplotlib.pyplot as plt
 from jax import jit
 from jax.config import config
 from optax import adam
+import optax as ox
 from typing import Dict
 from jaxutils import Dataset
 import jaxkern as jk
@@ -121,35 +122,28 @@ def rotate_xyz(x, y, z, t, t_x, c_x, c_y, c_z):
 def gp_interpolate_polar(X, y, n_interp):
     # Simulate data
     angles = jnp.linspace(0, 2 * jnp.pi, num=n_interp).reshape(-1, 1)
-
-    D = Dataset(X=X, y=y)
+    X = X.astype(np.float64)
+    y = y.astype(np.float64)
+    D = gpx.Dataset(X=X, y=y)
 
     # Define polar Gaussian process
     PKern = Polar()
-    likelihood = gpx.Gaussian(num_datapoints=len(X))
-    circlular_posterior = gpx.Prior(kernel=PKern) * likelihood
+    meanf = gpx.mean_functions.Zero()
+    likelihood = gpx.Gaussian(num_datapoints=len(X),obs_noise=jnp.array(0.000000000001))
+    circlular_posterior = gpx.Prior(mean_function=meanf,kernel=PKern) * likelihood
 
-    # Initialise parameter state:
-    parameter_state = gpx.initialise(circlular_posterior, key)
-    parameter_state.params["likelihood"]["obs_noise"] = 0
-    parameter_state.trainables["likelihood"]["obs_noise"] = False
 
-    # Optimise GP's marginal log-likelihood using Adam
-    negative_mll = jit(circlular_posterior.marginal_log_likelihood(D, negative=True))
-    optimiser = adam(learning_rate=0.05)
+   # Optimise GP's marginal log-likelihood using Adam
+    opt_posterior, history = gpx.fit(
+        model=circlular_posterior,
+        objective=jit(gpx.ConjugateMLL(negative=True)),
+        train_data=D,
+        optim=ox.adamw(learning_rate=0.05),
+        num_iters=500,
+        key=key,
+) 
 
-    inference_state = gpx.fit(
-        objective=negative_mll,
-        parameter_state=parameter_state,
-        optax_optim=optimiser,
-        num_iters=1000,
-    )
-
-    learned_params, training_history = inference_state.unpack()
-
-    posterior_rv = likelihood(
-        learned_params, circlular_posterior(learned_params, D)(angles)
-    )
+    posterior_rv = opt_posterior.likelihood(opt_posterior.predict(angles, train_data=D))
     mu = posterior_rv.mean()
     return angles, mu
 
@@ -410,8 +404,17 @@ def add_end(x, y, z, dx, dy, dz, d_start, fid_ax):
     return x, y, z
 
 
-def create_mesh(interp_points, x_file: dict, path: str):
+def create_mesh(interp_points_long, x_file: dict, path: str,keep_files=False):
     x = x_file.copy()
+    n_s = x["n_cs"]
+    n_l = x["n_l"]
+    interp_points = []
+    for i in range(n_l):
+        new_points = []
+        for j in range(n_s):
+            new_points.append(interp_points_long[i * n_l + j])
+        interp_points.append(np.array(new_points))
+
     coil_rad = x["coil_rad"]
     pitch = x["pitch"]
     length = x["length"]
@@ -594,6 +597,7 @@ def create_mesh(interp_points, x_file: dict, path: str):
 
     p_cylindrical_list = np.asarray(p_cylindrical_list)
     p_new_list = []
+
     for i in range(len(p_cylindrical_list[:, 0, 0])):
         x, y, z, d_start = interpolate_split(
             p_cylindrical_list[i, 0, :],
@@ -945,165 +949,3 @@ def create_mesh(interp_points, x_file: dict, path: str):
     os.system(path + "/Allrun.mesh")
     return
 
-
-def create_mesh_gif(interp_points, x_file: dict, path, pic_num):
-    x = x_file.copy()
-    coil_rad = x["coil_rad"]
-    pitch = x["pitch"]
-    length = x["length"]
-    r_c = x["radius_center"]
-    s_rad = x["start_rad"]
-
-    interp_points.append(
-        np.array([s_rad for i in range(len(interp_points[0]))])
-    )  # adding start and end inlet to be correct
-    interp_points.insert(0, np.array([s_rad for i in range(len(interp_points[0]))]))
-    interp_points.insert(0, np.array([s_rad for i in range(len(interp_points[0]))]))
-
-    fid_rad = int(x["fid_radial"])
-    fid_ax = int(x["fid_axial"])
-
-    coils = length / (2 * np.pi * coil_rad)
-    h = coils * pitch
-    keys = ["x", "y", "t", "t_x", "z"]
-    data = {}
-
-    n = len(interp_points) - 1
-    t_x = -np.arctan(h / length)
-
-    print("No inversion location specified")
-
-    coil_vals = np.linspace(0, 2 * coils * np.pi, n)
-
-    # x and y values around a circle
-    data["x"] = [(coil_rad * np.cos(x_y)) for x_y in coil_vals]
-    data["x"] = data["x"]
-    data["y"] = [(coil_rad * np.sin(x_y)) for x_y in coil_vals]
-    data["y"] = data["y"]
-    # rotations around z are defined by number of coils
-    data["t"] = list(coil_vals)
-    data["t_x"] = [0] + [t_x for i in range(n - 1)]
-    # height is linear
-    data["z"] = list(np.linspace(0, h, n))
-
-    L = coil_rad
-    data["x"], data["y"], data["z"], data["t"], data["t_x"] = add_start(
-        data["x"], data["y"], data["z"], data["t"], data["t_x"], L
-    )
-
-    try:
-        shutil.copytree("mesh_generation/mesh", path)
-    except FileExistsError:
-        print("Folder already exists")
-
-    n = len(data["x"])
-    p_list = []
-    p_c_list = []
-    p_interp = []
-
-    for i in tqdm(range(n)):
-        x, y, z, x_p, y_p, z_p, x_n, z_n = create_circle(
-            [data[keys[j]][i] for j in range(len(keys))], interp_points[i]
-        )
-
-        p_list.append([x, y, z])
-        p_interp.append([x_n, z_n])
-
-    p_list = np.asarray(np.array(p_list))
-    p_c_list = np.asarray(p_c_list)
-    p_interp = np.asarray(p_interp)
-
-    p_cylindrical_list = []
-
-    for i in range(len(p_list[0, 0, :])):
-        r, theta, z = cartesian_convert(
-            p_list[:, 0, i], p_list[:, 1, i], p_list[:, 2, i]
-        )
-        p_cylindrical_list.append([r, theta, z])
-
-    p_cylindrical_list = np.asarray(p_cylindrical_list)
-    p_new_list = []
-    for i in range(len(p_cylindrical_list[:, 0, 0])):
-        x, y, z, d_start = interpolate_split(
-            p_cylindrical_list[i, 0, :],
-            p_cylindrical_list[i, 1, :],
-            p_cylindrical_list[i, 2, :],
-            fid_ax,
-        )
-        p_new_list.append([x, y, z])
-
-    p_new_list = np.asarray(p_new_list)
-
-    m_x = np.mean(p_new_list[:, 0, :], axis=0)
-    m_y = np.mean(p_new_list[:, 1, :], axis=0)
-    m_z = np.mean(p_new_list[:, 2, :], axis=0)
-    dx = m_x[-1] - m_x[-2]
-    dy = m_y[-1] - m_y[-2]
-    dz = m_z[-1] - m_z[-2]
-
-    p_list = []
-    for i in range(len(p_new_list[:, 0, 0])):
-        x, y, z = add_end(
-            p_new_list[i, 0, :],
-            p_new_list[i, 1, :],
-            p_new_list[i, 2, :],
-            dx,
-            dy,
-            dz,
-            d_start,
-            fid_ax,
-        )
-        p_list.append([x, y, z])
-
-    p_list = np.asarray(p_list)
-
-    fig_i, axs_i = plt.subplots(1, 3, figsize=(10, 3), subplot_kw=dict(projection="3d"))
-    fig_i.tight_layout()
-
-    axs_i[0].view_init(0, 270)
-    axs_i[1].view_init(0, 180)
-    axs_i[2].view_init(270, 0)
-
-    for i in np.linspace(0, len(p_list[:, 0, 0]) - 1, 10):
-        i = int(i)
-        for ax in axs_i:
-            ax.plot(
-                p_list[i, 0, :],
-                p_list[i, 1, :],
-                p_list[i, 2, :],
-                c="k",
-                alpha=0.5,
-                lw=0.5,
-            )
-
-    for i in range(len(p_list[0, 0, :])):
-        for ax in axs_i:
-            ax.plot(
-                p_list[:, 0, i],
-                p_list[:, 1, i],
-                p_list[:, 2, i],
-                c="k",
-                alpha=0.5,
-                lw=0.5,
-            )
-
-    for ax in axs_i:
-        ax.set_box_aspect(
-            [ub - lb for lb, ub in (getattr(ax, f"get_{a}lim")() for a in "xyz")]
-        )
-        ax.set_xticks([])
-        ax.set_yticks([])
-        ax.set_zticks([])
-        ax.xaxis.set_pane_color((1.0, 1.0, 1.0, 0.0))
-        ax.yaxis.set_pane_color((1.0, 1.0, 1.0, 0.0))
-        ax.zaxis.set_pane_color((1.0, 1.0, 1.0, 0.0))
-        ax.grid()
-    axs_i[0].set_xlabel("x", fontsize=14)
-    axs_i[0].set_zlabel("z", fontsize=14)
-    axs_i[1].set_ylabel("y", fontsize=14)
-    axs_i[1].set_zlabel("z", fontsize=14)
-    axs_i[2].set_ylabel("y", fontsize=14)
-    axs_i[2].set_xlabel("x", fontsize=14)
-    plt.savefig(path + "/" + str(pic_num) + ".png", dpi=600)
-
-    return

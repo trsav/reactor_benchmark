@@ -36,6 +36,7 @@ from matplotlib import rc
 
 parallel = False
 
+
 def format_data(data):
     # Reads a data file and returns inputs, outputs, costs
 
@@ -76,7 +77,7 @@ def unnormalise(vec, mean, std):
 
 
 def normalise_bounds_dict(bounds, mean, std):
-    # normalises a bounds dictionary 
+    # normalises a bounds dictionary
 
     # get keys of bounds dictionary
     keys = list(bounds.keys())
@@ -100,7 +101,7 @@ def sample_bounds(bounds, n):
 
 
 def sample_to_dict(sample, bounds):
-    # convert a list of values to a dictionary 
+    # convert a list of values to a dictionary
     # using respective bounds keys
 
     sample_dict = {}
@@ -125,7 +126,7 @@ def save_json(data, path):
 
 
 def lhs(bounds: list, p: int, log):
-    # latin hypercube sampling 
+    # latin hypercube sampling
 
     d = len(bounds)
     sample = np.zeros((p, len(bounds)))
@@ -155,9 +156,10 @@ def loss(N: list, theta: list, etheta: list) -> float:
     for i in range(len(etheta)):
         et.append(calc_etheta(N, theta[i]))
 
-    # I found this is most robust by quantifying the loss as: 
+    # I found this is most robust by quantifying the loss as:
     error_sq = (max(etheta) - max(et)) ** 2
     return error_sq
+
 
 def loss_sq(N: list, theta: list, etheta: list) -> float:
     # quantifies the difference between true dimensionless concentration
@@ -166,9 +168,9 @@ def loss_sq(N: list, theta: list, etheta: list) -> float:
     for i in range(len(etheta)):
         et.append(calc_etheta(N, theta[i]))
 
-    # I found this is most robust by quantifying the loss as: 
-    error_sq = sum((etheta[i] - et[i]) ** 2 for i in range(len(etheta)))/len(etheta)
-    return (max(etheta) - max(et)) ** 2,error_sq
+    # I found this is most robust by quantifying the loss as:
+    error_sq = sum((etheta[i] - et[i]) ** 2 for i in range(len(etheta))) / len(etheta)
+    return (max(etheta) - max(et)) ** 2, error_sq
 
 
 class CompactAnalyzer(BoundingLogAnalyzer):
@@ -198,7 +200,7 @@ def val_to_rtd(time, value, path):
     times_peaks = time[peaks]
     values_peaks = value[peaks]
 
-    # plot this if you want 
+    # plot this if you want
     if path != None:
         plt.figure()
         plt.plot(time, value, c="k", lw=1, alpha=0.1)
@@ -219,7 +221,6 @@ def val_to_rtd(time, value, path):
     return theta, etheta
 
 
-
 def calculate_N(value, time, path):
     # obtaining a smooth curve by taking peaks
     theta, etheta = val_to_rtd(time, value, path)
@@ -236,7 +237,7 @@ def calculate_N(value, time, path):
             N = n0
 
     print(best)
-    # plot this is you want 
+    # plot this is you want
     if path == None:
         return N
     else:
@@ -251,6 +252,7 @@ def calculate_N(value, time, path):
         plt.ylim(0, 2.5)
         plt.savefig(path + "/dimensionless_conversion.png")
         return N
+
 
 def val_to_rtd_clean(time, value):
     # convert measured values of concentration and time
@@ -270,7 +272,6 @@ def val_to_rtd_clean(time, value):
 
 
 def calculate_N_clean(value, time, path):
-
     t_d, et_d = val_to_rtd_clean(time, value)
     s = 10000
     n0_list = np.logspace(np.log(1), np.log(100), s)
@@ -278,12 +279,12 @@ def calculate_N_clean(value, time, path):
     # forgo any optimisation here because this is more robust
     best = np.Inf
     for n0 in n0_list:
-        l,le = loss_sq(n0, t_d, et_d)
+        l, le = loss_sq(n0, t_d, et_d)
         if le < best:
             best = le
             N = n0
     best = best * 100
-    # plot this is you want 
+    # plot this is you want
     if path == None:
         return N, best
     else:
@@ -296,6 +297,7 @@ def calculate_N_clean(value, time, path):
         plt.legend()
         plt.savefig(path + "/dimensionless_conversion.png")
         return N, best
+
 
 def parse_conditions(case, x):
     # append operating conditions to correct location in case file
@@ -361,8 +363,8 @@ def run_cfd(case):
 
 
 def list_from_dict(list_of_dicts, key):
-    # returns a list of values from a list of dictionarys and 
-    # a given key 
+    # returns a list of values from a list of dictionarys and
+    # a given key
     l = []
     for d in list_of_dicts:
         try:
@@ -380,29 +382,87 @@ def is_prime(x):
             return False
     return True
 
-def is_divisible_by(x,n):
+
+def is_divisible_by(x, n):
     return x % n == 0
 
-def derive_cpu_split(x):
-    splits = [x,1,1]
 
-    for v in np.flip([2,3,5,7,11,13,17,19,23,29,31,37,41,43,47,53,59,61,67,71,73,79,83,89,97]):
-        while True: 
-            if is_divisible_by(splits[0],v):
+def derive_cpu_split(x):
+    splits = [x, 1, 1]
+
+    for v in np.flip(
+        [
+            2,
+            3,
+            5,
+            7,
+            11,
+            13,
+            17,
+            19,
+            23,
+            29,
+            31,
+            37,
+            41,
+            43,
+            47,
+            53,
+            59,
+            61,
+            67,
+            71,
+            73,
+            79,
+            83,
+            89,
+            97,
+        ]
+    ):
+        while True:
+            if is_divisible_by(splits[0], v):
                 splits[0] = int(splits[0] / v)
                 splits[1] *= v
             else:
-                break 
+                break
 
-        while True: 
-            if is_divisible_by(splits[1],v) and splits[1] > splits[2]:
+        while True:
+            if is_divisible_by(splits[1], v) and splits[1] > splits[2]:
                 splits[1] = int(splits[1] / v)
                 splits[2] *= v
             else:
-                break 
+                break
 
-    for v in np.flip([2,3,5,7,11,13,17,19,23,29,31,37,41,43,47,53,59,61,67,71,73,79,83,89,97]):
-        if is_divisible_by(splits[-1],v) and splits[0] == 1:
+    for v in np.flip(
+        [
+            2,
+            3,
+            5,
+            7,
+            11,
+            13,
+            17,
+            19,
+            23,
+            29,
+            31,
+            37,
+            41,
+            43,
+            47,
+            53,
+            59,
+            61,
+            67,
+            71,
+            73,
+            79,
+            83,
+            89,
+            97,
+        ]
+    ):
+        if is_divisible_by(splits[-1], v) and splits[0] == 1:
             splits[-1] = int(splits[-1] / v)
             splits[0] *= v
 
@@ -411,8 +471,8 @@ def derive_cpu_split(x):
     return splits
 
 
-def replaceAll(file,searchExp,replaceExp):
+def replaceAll(file, searchExp, replaceExp):
     for line in fileinput.input(file, inplace=1):
         if searchExp in line:
-            line = line.replace(searchExp,replaceExp)
+            line = line.replace(searchExp, replaceExp)
         sys.stdout.write(line)
