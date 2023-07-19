@@ -2,7 +2,8 @@ import sys
 import os
 from jax.nn import softplus
 from simple_pytree import static_field
-import tensorflow_probability.substrates.jax as tfp 
+import tensorflow_probability.substrates.jax as tfp
+
 tfb = tfp.bijectors
 
 import gpjax as gpx
@@ -48,6 +49,7 @@ key = jr.PRNGKey(10)
 # Enable Float64 for more stable matrix inversions.
 config.update("jax_enable_x64", True)
 
+
 def angular_distance(x, y, c):
     return jnp.abs((x - y + c) % (c * 2) - c)
 
@@ -71,6 +73,7 @@ class Polar(gpx.kernels.AbstractKernel):
             1 - t / self.c, 0, jnp.inf
         ) ** self.tau
         return K.squeeze()
+
 
 def rotate_z(x, y, z, r_z):
     # rotation of cartesian coordinates around z axis by r_z radians
@@ -129,11 +132,12 @@ def gp_interpolate_polar(X, y, n_interp):
     # Define polar Gaussian process
     PKern = Polar()
     meanf = gpx.mean_functions.Zero()
-    likelihood = gpx.Gaussian(num_datapoints=len(X),obs_noise=jnp.array(0.000000000001))
-    circlular_posterior = gpx.Prior(mean_function=meanf,kernel=PKern) * likelihood
+    likelihood = gpx.Gaussian(
+        num_datapoints=len(X), obs_noise=jnp.array(0.000000000001)
+    )
+    circlular_posterior = gpx.Prior(mean_function=meanf, kernel=PKern) * likelihood
 
-
-   # Optimise GP's marginal log-likelihood using Adam
+    # Optimise GP's marginal log-likelihood using Adam
     opt_posterior, history = gpx.fit(
         model=circlular_posterior,
         objective=jit(gpx.ConjugateMLL(negative=True)),
@@ -141,7 +145,7 @@ def gp_interpolate_polar(X, y, n_interp):
         optim=ox.adamw(learning_rate=0.05),
         num_iters=500,
         key=key,
-) 
+    )
 
     posterior_rv = opt_posterior.likelihood(opt_posterior.predict(angles, train_data=D))
     mu = posterior_rv.mean()
@@ -404,22 +408,35 @@ def add_end(x, y, z, dx, dy, dz, d_start, fid_ax):
     return x, y, z
 
 
-def create_mesh(interp_points_long, x_file: dict, path: str,keep_files=False):
-    x = x_file.copy()
-    n_s = x["n_cs"]
-    n_l = x["n_l"]
+def create_mesh(x, z, path: str, keep_files=False):
+    data = {
+        "coils": 2,
+        "start_rad": 0.0025,
+        "radius_center": 0.00125,
+        "length": np.pi * 2 * 0.010391 * 2,
+        "inversion_parameter": 0.0,
+        "a": 0.0,
+        "f": 0.0,
+        "re": 50.0,
+        "pitch": 0.0104,
+        "coil_rad": 0.0125,
+        "n_cs": 6,
+        "n_l": 6,
+    }
+    n_s = data["n_cs"]
+    n_l = data["n_l"]
     interp_points = []
     for i in range(n_l):
         new_points = []
         for j in range(n_s):
-            new_points.append(interp_points_long[i * n_l + j])
+            new_points.append(x[i * n_l + j])
         interp_points.append(np.array(new_points))
 
-    coil_rad = x["coil_rad"]
-    pitch = x["pitch"]
-    length = x["length"]
-    r_c = x["radius_center"]
-    s_rad = x["start_rad"]
+    coil_rad = data["coil_rad"]
+    pitch = data["pitch"]
+    length = data["length"]
+    r_c = data["radius_center"]
+    s_rad = data["start_rad"]
 
     interp_points.append(
         np.array([s_rad for i in range(len(interp_points[0]))])
@@ -427,8 +444,8 @@ def create_mesh(interp_points_long, x_file: dict, path: str,keep_files=False):
     interp_points.insert(0, np.array([s_rad for i in range(len(interp_points[0]))]))
     interp_points.insert(0, np.array([s_rad for i in range(len(interp_points[0]))]))
 
-    fid_rad = int(x["fid_radial"])
-    fid_ax = int(x["fid_axial"])
+    fid_rad = int(z[1])
+    fid_ax = int(z[0])
 
     coils = length / (2 * np.pi * coil_rad)
     h = coils * pitch
@@ -437,8 +454,6 @@ def create_mesh(interp_points_long, x_file: dict, path: str,keep_files=False):
 
     n = len(interp_points) - 1
     t_x = -np.arctan(h / length)
-
-    print("No inversion location specified")
 
     coil_vals = np.linspace(0, 2 * coils * np.pi, n)
 
@@ -467,10 +482,7 @@ def create_mesh(interp_points_long, x_file: dict, path: str,keep_files=False):
     axs[1].view_init(0, 180)
     axs[2].view_init(270, 0)
 
-    try:
-        shutil.copytree("mesh_generation/mesh", path)
-    except FileExistsError:
-        print("Folder already exists")
+    shutil.copytree("mesh_generation/mesh", path)
 
     plt.subplots_adjust(left=0.01, right=0.99, wspace=0.05, top=0.99, bottom=0.01)
 
@@ -479,7 +491,7 @@ def create_mesh(interp_points_long, x_file: dict, path: str,keep_files=False):
     p_c_list = []
     p_interp = []
 
-    for i in tqdm(range(n)):
+    for i in range(n):
         x, y, z, x_p, y_p, z_p, x_n, z_n = create_circle(
             [data[keys[j]][i] for j in range(len(keys))], interp_points[i]
         )
@@ -785,7 +797,8 @@ def create_mesh(interp_points_long, x_file: dict, path: str,keep_files=False):
     for i in range(len(p_list[0, 0, :])):
         c_same[:, :, i] = c
     inner_p_list = 0.8 * p_list + 0.2 * c_same
-    for i in range(4):
+    print('Defining blocks...')
+    for i in tqdm(range(4)):
         e = s + ds + 1
         quart = p_list[:, :, s:e]
         inner_quart = inner_p_list[:, :, s:e]
@@ -939,13 +952,12 @@ def create_mesh(interp_points_long, x_file: dict, path: str,keep_files=False):
     axs[2].set_ylabel("y", fontsize=14)
     axs[2].set_xlabel("x", fontsize=14)
 
-    plt.savefig(path + "/blocks.pdf", dpi=600)
+    plt.savefig(path + "/blocks.pdf", dpi=300)
 
     # run script to create mesh
-    print("Writing geometry")
+    print("Writing geometry...")
     mesh.write(output_path=os.path.join(path, "system", "blockMeshDict"), geometry=None)
-    print("Running blockMesh")
+    print("Running blockMesh...")
     os.system("chmod +x " + path + "/Allrun.mesh")
     os.system(path + "/Allrun.mesh")
     return
-

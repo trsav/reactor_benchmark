@@ -1,22 +1,10 @@
 import numpy as np
-from mpl_toolkits.axes_grid1 import make_axes_locatable
 import json
-from datetime import datetime
+import sys
 from scipy.special import factorial
 import matplotlib.pyplot as plt
-import os
-from matplotlib.pyplot import cm
 from os import path
-import shutil
-import sys
-from scipy.optimize import minimize
-import matplotlib.colors as colors
-from uuid import uuid4
-import pickle
-import time
 import fileinput
-import jax.numpy as jnp
-from distutils.dir_util import copy_tree
 from scipy.signal import find_peaks
 from PyFoam.Basics.DataStructures import Vector
 from PyFoam.RunDictionary.ParsedParameterFile import ParsedParameterFile
@@ -25,16 +13,8 @@ from PyFoam.Execution.UtilityRunner import UtilityRunner
 from PyFoam.LogAnalysis.SimpleLineAnalyzer import GeneralSimpleLineAnalyzer
 from PyFoam.LogAnalysis.BoundingLogAnalyzer import BoundingLogAnalyzer
 import numpy.random as rnd
-import gpjax as gpx
-from jax import grad, jit, value_and_grad
 import jax.numpy as jnp
-from uuid import uuid4
-import jax.random as jr
-import optax as ox
-import jax
-from matplotlib import rc
 
-parallel = False
 
 
 def format_data(data):
@@ -338,7 +318,7 @@ def parse_conditions_given(case, a, f, re):
     return
 
 
-def run_cfd(case):
+def run_cfd(case,parallel):
     # run a casefile
 
     # multiple procs if true
