@@ -15,7 +15,7 @@ app = Flask(__name__)
 
 
 @app.route("/cross_section", methods=["POST"])
-def eval_cfd():
+def cross_section():
     """
     This REST API is used to evaluate the CFD simulation for the reactor design problem.
     The API takes in a JSON object with the following format:
@@ -178,7 +178,7 @@ def eval_cfd():
 
 
 @app.route("/cross_section_pulsed_flow", methods=["POST"])
-def eval_cfd():
+def cross_section_pulsed_flow():
     """
     This REST API is used to evaluate the CFD simulation for the reactor design problem.
     The API takes in a JSON object with the following format:
