@@ -13,11 +13,6 @@
     <img src="images/reactors.png" alt="Reactor Designs" title="reactor_designs" width="100%" />
 </div>
 
-## Requirements 
-- Docker. 
-- Ability to perform a POST request e.g. in Python. 
-
-
 ## Quickstart
 
 1. **Clone the repository.**
