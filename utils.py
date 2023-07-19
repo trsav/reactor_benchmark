@@ -16,7 +16,6 @@ import numpy.random as rnd
 import jax.numpy as jnp
 
 
-
 def format_data(data):
     # Reads a data file and returns inputs, outputs, costs
 
@@ -205,18 +204,18 @@ def calculate_N(value, time, path):
     # obtaining a smooth curve by taking peaks
     theta, etheta = val_to_rtd(time, value, path)
     # fitting value of N
-    s = 5000
-    n0_list = np.logspace(np.log(1), np.log(50), s)
+    s = 10000
+    n0_list = np.logspace(np.log(1), np.log(100), s)
 
     # forgo any optimisation here because this is more robust
     best = np.Inf
     for n0 in n0_list:
-        l = loss(n0, theta, etheta)
-        if l < best:
-            best = l
+        l, le = loss_sq(n0, theta, etheta)
+        if le < best:
+            best = le
             N = n0
+    best = best * 100
 
-    print(best)
     # plot this is you want
     if path == None:
         return N
@@ -231,7 +230,7 @@ def calculate_N(value, time, path):
         plt.xlim(0, 4)
         plt.ylim(0, 2.5)
         plt.savefig(path + "/dimensionless_conversion.png")
-        return N
+        return N, best
 
 
 def val_to_rtd_clean(time, value):
@@ -318,7 +317,7 @@ def parse_conditions_given(case, a, f, re):
     return
 
 
-def run_cfd(case,parallel):
+def run_cfd(case, parallel):
     # run a casefile
 
     # multiple procs if true

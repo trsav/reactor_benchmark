@@ -15,6 +15,7 @@ from jaxtyping import (
     Float,
     install_import_hook,
 )
+
 sys.path.insert(1, os.path.join(sys.path[0], ".."))
 sys.path.insert(1, "mesh_generation/classy_blocks/src/")
 from classy_blocks.classes.primitives import Edge
@@ -797,7 +798,7 @@ def create_mesh(x, z, path: str, keep_files=False):
     for i in range(len(p_list[0, 0, :])):
         c_same[:, :, i] = c
     inner_p_list = 0.8 * p_list + 0.2 * c_same
-    print('Defining blocks...')
+    print("Defining blocks...")
     for i in tqdm(range(4)):
         e = s + ds + 1
         quart = p_list[:, :, s:e]

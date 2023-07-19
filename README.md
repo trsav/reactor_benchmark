@@ -13,6 +13,11 @@
     <img src="images/reactors.png" alt="Reactor Designs" title="reactor_designs" width="100%" />
 </div>
 
+## Requirements 
+- Docker. 
+- Ability to perform a POST request e.g. in Python. 
+
+
 ## Quickstart
 
 1. **Clone the repository.**
@@ -51,7 +56,7 @@ Refer to the function description in the code for more information about the `x`
 | Endpoint | Description | Variables | Fidelities |
 | -------- | ----------- | --------- | ---------- |
 | cross_section  | Variables define inducing points that specify the cross section of the reactor throughout the length. Simulations are performed under steady-flow conditions. The objective returned is the equivalent tanks-in-series of the reactor plus a penalty that penalises non-symmetric residence time distributions.   |  $\mathbf{x}\in [0,1]^{36}$ | $\mathbf{z}\in[0,1]^2$           |
-
+| cross_section_pulsed_flow  | Same variables as ```cross_section```, in addition to three operating conditions that define the amplitude, frequency, and Reynolds number of the inlet boundary conditions (```x[0],x[1],x[2]``` respectively).  |  $\mathbf{x}\in [0,1]^{39}$ | $\mathbf{z}\in[0,1]^2$           |
 
 
 ## Key Features
