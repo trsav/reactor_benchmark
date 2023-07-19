@@ -6,7 +6,7 @@
 
 [![Code style: black](https://img.shields.io/badge/code%20style-black-000000.svg)](https://github.com/psf/black) [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT) 
 
-- This repository contains a Dockerized Flask application that serves a benchmark for use within optimization frameworks. 
+- This repository contains a Dockerized Flask application that serves a benchmark for use within **expensive, black-box, and multi-fidelity optimization frameworks**. 
 - The Flask application can be accessed via a REST API and supports both single and multi-fidelity evaluations with adjustable CPU usage for parallel simulations.
 
 <div align="center">
