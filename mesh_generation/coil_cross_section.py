@@ -409,7 +409,7 @@ def add_end(x, y, z, dx, dy, dz, d_start, fid_ax):
     return x, y, z
 
 
-def create_mesh(x, z, path: str, keep_files=False):
+def create_mesh(x, z, path: str):
     data = {
         "coils": 2,
         "start_rad": 0.0025,
