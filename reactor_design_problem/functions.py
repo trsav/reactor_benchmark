@@ -928,7 +928,7 @@ def full_pulsed_flow():
     the path of the reactor in cylindrical coordinates.
     The bounds have been normalised between 0 and 1.
 
-    Dimensionality: 47
+    Dimensionality: 50
     Bounds: [0,1]
     Type: Continuous
 
@@ -953,8 +953,8 @@ def full_pulsed_flow():
     # obtain data from request
     data = request.get_json()
     # check variables are in correct format
-    if len(data["x"]) != 47:
-        raise ValueError("There must be 47 decision variables.")
+    if len(data["x"]) != 50:
+        raise ValueError("There must be 50 decision variables.")
 
     # check if all values are between 0 and 1
     if not all(0 <= value <= 1 for value in data["x"]):

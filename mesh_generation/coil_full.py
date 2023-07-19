@@ -7,7 +7,6 @@ sys.path.insert(1, "mesh_generation/classy_blocks/src/")
 from classy_blocks.classes.primitives import Edge
 from classy_blocks.classes.block import Block
 from jax.nn import softplus
-from gpjax.config import add_parameter
 from classy_blocks.classes.mesh import Mesh
 import shutil
 import matplotlib.pyplot as plt
@@ -20,13 +19,26 @@ import jax.numpy as jnp
 import jax.random as jr
 import matplotlib.pyplot as plt
 from jax import jit
+from jax.nn import softplus
 from jax.config import config
-from jaxtyping import Array, Float
+from simple_pytree import static_field
+import tensorflow_probability.substrates.jax as tfp
+tfb = tfp.bijectors
+from gpjax.base.param import param_field
+
+from dataclasses import dataclass
+from jaxtyping import (
+    Array,
+    Float,
+    install_import_hook,
+)
 from optax import adam
+import optax as ox
 from typing import Dict
 from jaxutils import Dataset
 import jaxkern as jk
 import gpjax as gpx
+
 
 key = jr.PRNGKey(10)
 # Enable Float64 for more stable matrix inversions.
@@ -34,37 +46,28 @@ config.update("jax_enable_x64", True)
 
 
 def angular_distance(x, y, c):
-        return jnp.abs((x - y + c) % (c * 2) - c)
+    return jnp.abs((x - y + c) % (c * 2) - c)
 
 
-class Polar(jk.base.AbstractKernel):
-        def __init__(self) -> None:
-                super().__init__()
-                self.period: float = 2 * jnp.pi
-                self.c = self.period / 2.0  # in [0, \pi]
-
-        def __call__(
-                self, params: Dict, x: Float[Array, "1 D"], y: Float[Array, "1 D"]
-        ) -> Float[Array, "1"]:
-                tau = params["tau"]
-                t = angular_distance(x, y, self.c)
-                K = (1 + tau * t / self.c) * jnp.clip(1 - t / self.c, 0, jnp.inf) ** tau
-                return K.squeeze()
-
-        def init_params(self, key: jr.KeyArray) -> dict:
-                return {"tau": jnp.array([4.0])}
-
-        # This is depreciated. Can be removed once JaxKern is updated.
-        def _initialise_params(self, key: jr.KeyArray) -> Dict:
-                return self.init_params(key)
+bij = tfb.Chain([tfb.Softplus(), tfb.Shift(np.array(4.0).astype(np.float64))])
 
 
-bij_fn = lambda x: softplus(x + jnp.array(4.0))
-bij = dx.Lambda(
-        forward=bij_fn, inverse=lambda y: -jnp.log(-jnp.expm1(-y - 4.0)) + y - 4.0
-)
+@dataclass
+class Polar(gpx.kernels.AbstractKernel):
+    period: float = static_field(2 * jnp.pi)
+    tau: float = param_field(jnp.array([4.0]), bijector=bij)
 
-add_parameter("tau", bij)
+    def __post_init__(self):
+        self.c = self.period / 2.0
+
+    def __call__(
+        self, x: Float[Array, "1 D"], y: Float[Array, "1 D"]
+    ) -> Float[Array, "1"]:
+        t = angular_distance(x, y, self.c)
+        K = (1 + self.tau * t / self.c) * jnp.clip(
+            1 - t / self.c, 0, jnp.inf
+        ) ** self.tau
+        return K.squeeze()
 
 
 def rotate_z(x0, y0, z0, r_z):
@@ -276,41 +279,34 @@ def interpolate_s(y, fac_interp, kind):
 
         return y
 
-def gp_interpolate_polar(X,y,n_interp):
-        # Simulate data
-        angles = jnp.linspace(0, 2 * jnp.pi, num=n_interp).reshape(-1, 1)
+def gp_interpolate_polar(X, y, n_interp):
+    # Simulate data
+    angles = jnp.linspace(0, 2 * jnp.pi, num=n_interp).reshape(-1, 1)
+    X = X.astype(np.float64)
+    y = y.astype(np.float64)
+    D = gpx.Dataset(X=X, y=y)
 
-        D = Dataset(X=X, y=y)
+    # Define polar Gaussian process
+    PKern = Polar()
+    meanf = gpx.mean_functions.Zero()
+    likelihood = gpx.Gaussian(
+        num_datapoints=len(X), obs_noise=jnp.array(0.000000000001)
+    )
+    circlular_posterior = gpx.Prior(mean_function=meanf, kernel=PKern) * likelihood
 
-        # Define polar Gaussian process 
-        PKern = Polar()
-        likelihood = gpx.Gaussian(num_datapoints=len(X))
-        circlular_posterior = gpx.Prior(kernel=PKern) * likelihood
+    # Optimise GP's marginal log-likelihood using Adam
+    opt_posterior, history = gpx.fit(
+        model=circlular_posterior,
+        objective=jit(gpx.ConjugateMLL(negative=True)),
+        train_data=D,
+        optim=ox.adamw(learning_rate=0.05),
+        num_iters=500,
+        key=key,
+    )
 
-        # Initialise parameter state:
-        parameter_state = gpx.initialise(circlular_posterior, key)
-        parameter_state.params['likelihood']['obs_noise'] = 0 
-        parameter_state.trainables['likelihood']['obs_noise'] = False
-
-        # Optimise GP's marginal log-likelihood using Adam
-        negative_mll = jit(circlular_posterior.marginal_log_likelihood(D, negative=True))
-        optimiser = adam(learning_rate=0.05)
-
-
-        inference_state = gpx.fit(
-                objective=negative_mll,
-                parameter_state=parameter_state,
-                optax_optim=optimiser,
-                num_iters=1000,
-        )
-
-        learned_params, training_history = inference_state.unpack()
-
-        posterior_rv = likelihood(
-                learned_params, circlular_posterior(learned_params, D)(angles)
-        )
-        mu = posterior_rv.mean()
-        return angles, mu 
+    posterior_rv = opt_posterior.likelihood(opt_posterior.predict(angles, train_data=D))
+    mu = posterior_rv.mean()
+    return angles, mu
 
 
 def rotate_xyz(x,y,z,t,t_x,c_x,c_y,c_z):
