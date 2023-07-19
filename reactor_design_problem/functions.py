@@ -233,7 +233,7 @@ def cross_section_pulsed_flow():
 
     # check variables are in correct format
     if len(data["x"]) != 39:
-        raise ValueError("There must be 36 decision variables.")
+        raise ValueError("There must be 39 decision variables.")
 
     # check if all values are between 0 and 1
     if not all(0 <= value <= 1 for value in data["x"]):
