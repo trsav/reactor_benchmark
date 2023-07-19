@@ -62,8 +62,6 @@ Refer to the function description in the code for more information about the `x`
 | ```/full```  | A combination of coil path and cross section.|  $\mathbf{x}\in [0,1]^{47}$ | $\mathbf{z}\in[0,1]^2$           |
 | ```/full_pulsed_flow```  | A combination of coil path, cross section, and pulsed-flow operating condition.|  $\mathbf{x}\in [0,1]^{50}$ | $\mathbf{z}\in[0,1]^2$           |
 
-
-
 ## Key Features
 - **Flexible**: Supports both single and multi-fidelity evaluations.
 - **Parallelizable**: Can adjust CPU usage for parallel simulations.

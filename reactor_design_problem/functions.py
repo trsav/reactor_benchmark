@@ -12,7 +12,6 @@ import shutil
 
 app = Flask(__name__)
 
-
 @app.route("/cross_section", methods=["POST"])
 def cross_section():
     """
@@ -1109,7 +1108,6 @@ def full_pulsed_flow():
         return jsonify({"obj": N-penalty, "cost": end - start})
     else:
         return jsonify({"obj": N-penalty})
-
 
 
 if __name__ == "__main__":
