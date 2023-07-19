@@ -9,9 +9,9 @@
 This repository contains a Dockerized Flask application that serves a benchmark for use within optimization frameworks. 
 The Flask application can be accessed via a REST API and supports both single and multi-fidelity evaluations with adjustable CPU usage for parallel simulations.
 
-<a>
-<img src=images/reactors.png alt="Reactor Designs" title="reactor_designs" align="center" height="150" />
-</a>
+<div align="center">
+    <img src="images/reactors.png" alt="Reactor Designs" title="reactor_designs" width="100%" />
+</div>
 
 ## Quickstart
 
