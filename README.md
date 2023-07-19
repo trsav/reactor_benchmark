@@ -59,6 +59,9 @@ Refer to the function description in the code for more information about the `x`
 | cross_section_pulsed_flow  | Same variables as ```cross_section```, in addition to three operating conditions that define the amplitude, frequency, and Reynolds number of the inlet boundary conditions (```x[0],x[1],x[2]``` respectively).  |  $\mathbf{x}\in [0,1]^{39}$ | $\mathbf{z}\in[0,1]^2$           |
 | path  | Variables describe deviations in coil path, in cylindrical coordinates, allowing the path of the reactor to vary.  |  $\mathbf{x}\in [0,1]^{11}$ | $\mathbf{z}\in[0,1]^2$           |
 | path_pulsed_flow  | Same variables as ```path```, in addition to three operating conditions that define the amplitude, frequency, and Reynolds number of the inlet boundary conditions  |  $\mathbf{x}\in [0,1]^{14}$ | $\mathbf{z}\in[0,1]^2$           |
+| full  | A combination of coil path and cross section.|  $\mathbf{x}\in [0,1]^{47}$ | $\mathbf{z}\in[0,1]^2$           |
+| full_pulsed_flow  | A combination of coil path and cross section and pulsed-flow operating condition.|  $\mathbf{x}\in [0,1]^{50}$ | $\mathbf{z}\in[0,1]^2$           |
+
 
 
 ## Key Features
