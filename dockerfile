@@ -1,10 +1,6 @@
 FROM mambaorg/micromamba:1.4.8 as micromamba
 FROM hfdresearch/swak4foamandpyfoam:latest-v1906
-# bring in the micromamba image so we can copy files from it
-
 USER root
-
-# # Update and install necessary packages
 RUN yum -y update 
 RUN yum -y install gcc g++ make binutils openssl-devel flex m4 subversion git mercurial wget python3-pip bear && yum clean all
 
