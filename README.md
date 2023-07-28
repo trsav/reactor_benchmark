@@ -45,6 +45,11 @@
     ```
 
 Refer to the function description in the code for more information about the `x`, `z`, `keep_files`, and `cpus` parameters.
+### Notes 
+
+- To perform single fidelity evaluations either omit ```z``` from the POST dictionary (in which case the simulation will be performed with fidelities ```[0.75,0.75]```) or choose your own values and keep track of them!
+- Lower fidelities will be quicker to evaluate, but will probably provide simpler, more flat objective functions.
+- A property of this problem is that lower fidelities are significantly biased from higher fidelities, providing consistently higher objective values. 
 
 ## Functions available
 
