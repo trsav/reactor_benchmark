@@ -121,7 +121,8 @@ def cross_section():
 
     # start timing for simulation cost
     start = time.time()
-    ID = datetime.now().strftime("%Y_%m_%d_%H_%M_%S")
+    ID = datetime.now().strftime("%Y_%m_%d_%H_%M_%S") 
+    ID = 'test'
 
     # replace deComposeParDict with correct number of CPUs
     print("Setting up simulation...")
@@ -408,17 +409,18 @@ def path():
     x_dict = {}
     x_dict["z_0"] = 0
     x_dict["rho_0"] = 0
-    x_dict['z_1'] = x[0] * (x_z_bounds[1] - x_z_bounds[0]) + x_z_bounds[0]
-    i = 0
+    x_dict['rho_1'] = 0
+    x_dict['z_1'] = (x[0] * (x_z_bounds[1] - x_z_bounds[0]) + x_z_bounds[0]) * 2
+    i = 1
     j = 2
-    while i <= int((len(x)-1)/2):
-        x_dict['z_'+str(j)] = x[i] * (x_z_bounds[1] - x_z_bounds[0]) + x_z_bounds[0]
+    while i <= int((len(x))/2):
+        x_dict['z_'+str(j)] = (x[i] * (x_z_bounds[1] - x_z_bounds[0]) + x_z_bounds[0]) * 2
         j += 1 
         i += 1
 
-    j = 1
+    j = 2
     while i < len(x):
-        x_dict['rho_'+str(j)] = x[i] * (x_rho_bounds[1] - x_rho_bounds[0]) + x_rho_bounds[0]
+        x_dict['rho_'+str(j)] = (x[i] * (x_rho_bounds[1] - x_rho_bounds[0]) + x_rho_bounds[0]) * 2
         i += 1
         j += 1
 
@@ -580,23 +582,24 @@ def path_pulsed_flow():
     x_z_bounds = [-0.001,0.001]
     x_rho_bounds = [-0.0035,0.0035]
 
-    x = list(data["x"])[:3]
-    x_oc = list(data["x"])[3:]
+    x = list(data["x"])[3:]
+    x_oc = list(data["x"])[:3]
 
     x_dict = {}
     x_dict["z_0"] = 0
     x_dict["rho_0"] = 0
-    x_dict['z_1'] = x[0] * (x_z_bounds[1] - x_z_bounds[0]) + x_z_bounds[0]
-    i = 0
+    x_dict['rho_1'] = 0
+    x_dict['z_1'] = (x[0] * (x_z_bounds[1] - x_z_bounds[0]) + x_z_bounds[0]) * 2
+    i = 1
     j = 2
-    while i <= int((len(x)-1)/2):
-        x_dict['z_'+str(j)] = x[i] * (x_z_bounds[1] - x_z_bounds[0]) + x_z_bounds[0]
+    while i <= int((len(x))/2):
+        x_dict['z_'+str(j)] = (x[i] * (x_z_bounds[1] - x_z_bounds[0]) + x_z_bounds[0]) * 2
         j += 1 
         i += 1
 
-    j = 1
+    j = 2
     while i < len(x):
-        x_dict['rho_'+str(j)] = x[i] * (x_rho_bounds[1] - x_rho_bounds[0]) + x_rho_bounds[0]
+        x_dict['rho_'+str(j)] = (x[i] * (x_rho_bounds[1] - x_rho_bounds[0]) + x_rho_bounds[0]) * 2
         i += 1
         j += 1
 
@@ -760,23 +763,24 @@ def full():
     coils = 2
     h = coils * 0.010391  # max height
     N = 2*np.pi *coils  # angular turns (radians)
-    n = 7
+    n = 6
 
     x_z_bounds = [-0.001,0.001]
     x_rho_bounds = [-0.0035,0.0035]
-    x = data['x'][:((n-1)*2)-1]
+    x = data['x'][:((n-1)*2)+1]
     x_dict = {}
     x_dict["z_0"] = 0
     x_dict["rho_0"] = 0
+    x_dict['rho_1'] = 0
     x_dict['z_1'] = (x[0] * (x_z_bounds[1] - x_z_bounds[0]) + x_z_bounds[0]) * 2
-    i = 0
+    i = 1
     j = 2
-    while i <= int((len(x)-1)/2):
+    while i <= int((len(x))/2):
         x_dict['z_'+str(j)] = (x[i] * (x_z_bounds[1] - x_z_bounds[0]) + x_z_bounds[0]) * 2
         j += 1 
         i += 1
 
-    j = 1
+    j = 2
     while i < len(x):
         x_dict['rho_'+str(j)] = (x[i] * (x_rho_bounds[1] - x_rho_bounds[0]) + x_rho_bounds[0]) * 2
         i += 1
@@ -793,14 +797,15 @@ def full():
             nominal_data["tube_rad_" + str(i)] = tube_rad_vals[i]
             nominal_data["rho_" + str(i)] = rho_vals[i]
 
-    x = data['x'][(n-1)*2-1:]
+    x = data['x'][(n-1)*2+1:]
 
     x_list = []
+    x_bounds = [0.002, 0.004]
     k = 0 
     for i in range(n_circ):
         x_add = []
         for j in range(n_cross_section):
-            x_add.append(x[k])
+            x_add.append(x[k] * (x_bounds[1] - x_bounds[0]) + x_bounds[0])
             k += 1
         x_list.append(np.array(x_add))
 
@@ -972,17 +977,19 @@ def full_pulsed_flow():
     x_rho_bounds = [-0.0035,0.0035]
     x = data['x'][3:((n-1)*2)-1+3]
     x_dict = {}
+    x_dict = {}
     x_dict["z_0"] = 0
     x_dict["rho_0"] = 0
+    x_dict['rho_1'] = 0
     x_dict['z_1'] = (x[0] * (x_z_bounds[1] - x_z_bounds[0]) + x_z_bounds[0]) * 2
-    i = 0
+    i = 1
     j = 2
-    while i <= int((len(x)-1)/2):
+    while i <= int((len(x))/2):
         x_dict['z_'+str(j)] = (x[i] * (x_z_bounds[1] - x_z_bounds[0]) + x_z_bounds[0]) * 2
         j += 1 
         i += 1
 
-    j = 1
+    j = 2
     while i < len(x):
         x_dict['rho_'+str(j)] = (x[i] * (x_rho_bounds[1] - x_rho_bounds[0]) + x_rho_bounds[0]) * 2
         i += 1
@@ -1002,11 +1009,12 @@ def full_pulsed_flow():
     x = data['x'][(n-1)*2-1+3:]
 
     x_list = []
+    x_bounds = [0.002, 0.004]
     k = 0 
     for i in range(n_circ):
         x_add = []
         for j in range(n_cross_section):
-            x_add.append(x[k])
+            x_add.append(x[k] * (x_bounds[1] - x_bounds[0]) + x_bounds[0])
             k += 1
         x_list.append(np.array(x_add))
 

@@ -57,17 +57,14 @@ class Polar(gpx.kernels.AbstractKernel):
     period: float = static_field(2 * jnp.pi)
     tau: float = param_field(jnp.array([4.0]), bijector=bij)
 
-    def __post_init__(self):
-        self.c = self.period / 2.0
-
     def __call__(
         self, x: Float[Array, "1 D"], y: Float[Array, "1 D"]
     ) -> Float[Array, "1"]:
-        t = angular_distance(x, y, self.c)
-        K = (1 + self.tau * t / self.c) * jnp.clip(
-            1 - t / self.c, 0, jnp.inf
-        ) ** self.tau
+        c = self.period / 2
+        t = angular_distance(x, y, c)
+        K = (1 + self.tau * t / c) * jnp.clip(1 - t / c, 0, jnp.inf) ** self.tau
         return K.squeeze()
+
 
 
 def rotate_z(x0, y0, z0, r_z):

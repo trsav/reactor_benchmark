@@ -1,20 +1,6 @@
 import sys
 import os
-from jax.nn import softplus
-from simple_pytree import static_field
-import tensorflow_probability.substrates.jax as tfp
 
-tfb = tfp.bijectors
-
-import gpjax as gpx
-from gpjax.base.param import param_field
-
-from dataclasses import dataclass
-from jaxtyping import (
-    Array,
-    Float,
-    install_import_hook,
-)
 
 sys.path.insert(1, os.path.join(sys.path[0], ".."))
 sys.path.insert(1, "mesh_generation/classy_blocks/src/")
@@ -45,8 +31,50 @@ from PIL import Image
 import imageio
 from matplotlib import rc
 
+# Enable Float64 for more stable matrix inversions.
+from jax.config import config
 
-key = jr.PRNGKey(10)
+config.update("jax_enable_x64", True)
+
+from dataclasses import dataclass
+from typing import Dict
+
+from jax import jit
+import jax.numpy as jnp
+import jax.random as jr
+from jaxtyping import (
+    Array,
+    Float,
+    install_import_hook,
+)
+import matplotlib.pyplot as plt
+import numpy as np
+import optax as ox
+from simple_pytree import static_field
+import tensorflow_probability.substrates.jax as tfp
+
+with install_import_hook("gpjax", "beartype.beartype"):
+    import gpjax as gpx
+    from gpjax.base.param import param_field
+
+from jax.nn import softplus
+from simple_pytree import static_field
+import tensorflow_probability.substrates.jax as tfp
+
+tfb = tfp.bijectors
+
+import gpjax as gpx
+from gpjax.base.param import param_field
+
+from dataclasses import dataclass
+from jaxtyping import (
+    Array,
+    Float,
+    install_import_hook,
+)
+
+key = jr.PRNGKey(1)
+
 # Enable Float64 for more stable matrix inversions.
 config.update("jax_enable_x64", True)
 
@@ -54,8 +82,8 @@ config.update("jax_enable_x64", True)
 def angular_distance(x, y, c):
     return jnp.abs((x - y + c) % (c * 2) - c)
 
-
-bij = tfb.Chain([tfb.Softplus(), tfb.Shift(np.array(4.0).astype(np.float64))])
+#bij = tfb.Chain([ tfb.Shift(np.array(4.0).astype(np.float64)),tfb.Softplus()])
+bij = tfb.Chain([tfb.Shift(np.array(-4.0).astype(np.float64)),tfb.Softplus()])
 
 
 @dataclass
@@ -63,18 +91,45 @@ class Polar(gpx.kernels.AbstractKernel):
     period: float = static_field(2 * jnp.pi)
     tau: float = param_field(jnp.array([4.0]), bijector=bij)
 
-    def __post_init__(self):
-        self.c = self.period / 2.0
-
     def __call__(
         self, x: Float[Array, "1 D"], y: Float[Array, "1 D"]
     ) -> Float[Array, "1"]:
-        t = angular_distance(x, y, self.c)
-        K = (1 + self.tau * t / self.c) * jnp.clip(
-            1 - t / self.c, 0, jnp.inf
-        ) ** self.tau
+        c = self.period / 2
+        t = angular_distance(x, y, c)
+        K = (1 + self.tau * t / c) * jnp.clip(1 - t / c, 0, jnp.inf) ** self.tau
         return K.squeeze()
 
+
+
+def gp_interpolate_polar(X, y, n_interp):
+    # Simulate data
+    angles = jnp.linspace(0, 2 * jnp.pi, num=n_interp).reshape(-1, 1)
+    X = X.astype(np.float64)
+    y = y.astype(np.float64)
+
+    D = gpx.Dataset(X=X, y=y)
+
+    # Define polar Gaussian process
+    PKern = Polar()
+    meanf = gpx.mean_functions.Zero()
+    likelihood = gpx.Gaussian(
+        num_datapoints=len(X), obs_noise=jnp.array(0.000000000001)
+    )
+    circlular_posterior = gpx.Prior(mean_function=meanf, kernel=PKern) * likelihood
+
+    # Optimise GP's marginal log-likelihood using Adam
+    opt_posterior, history = gpx.fit(
+        model=circlular_posterior,
+        objective=jit(gpx.ConjugateMLL(negative=True)),
+        train_data=D,
+        optim=ox.adamw(learning_rate=0.05),
+        num_iters=500,
+        key=key,
+    )
+
+    posterior_rv = opt_posterior.likelihood(opt_posterior.predict(angles, train_data=D))
+    mu = posterior_rv.mean()
+    return angles, mu
 
 def rotate_z(x, y, z, r_z):
     # rotation of cartesian coordinates around z axis by r_z radians
@@ -121,36 +176,6 @@ def rotate_xyz(x, y, z, t, t_x, c_x, c_y, c_z):
     y += c_y
     x, y, z = rotate_z(x, y, z, 3 * np.pi / 2)
     return x, y, z
-
-
-def gp_interpolate_polar(X, y, n_interp):
-    # Simulate data
-    angles = jnp.linspace(0, 2 * jnp.pi, num=n_interp).reshape(-1, 1)
-    X = X.astype(np.float64)
-    y = y.astype(np.float64)
-    D = gpx.Dataset(X=X, y=y)
-
-    # Define polar Gaussian process
-    PKern = Polar()
-    meanf = gpx.mean_functions.Zero()
-    likelihood = gpx.Gaussian(
-        num_datapoints=len(X), obs_noise=jnp.array(0.000000000001)
-    )
-    circlular_posterior = gpx.Prior(mean_function=meanf, kernel=PKern) * likelihood
-
-    # Optimise GP's marginal log-likelihood using Adam
-    opt_posterior, history = gpx.fit(
-        model=circlular_posterior,
-        objective=jit(gpx.ConjugateMLL(negative=True)),
-        train_data=D,
-        optim=ox.adamw(learning_rate=0.05),
-        num_iters=500,
-        key=key,
-    )
-
-    posterior_rv = opt_posterior.likelihood(opt_posterior.predict(angles, train_data=D))
-    mu = posterior_rv.mean()
-    return angles, mu
 
 
 def create_center_circle(d, r):
@@ -483,7 +508,10 @@ def create_mesh(x, z, path: str):
     axs[1].view_init(0, 180)
     axs[2].view_init(270, 0)
 
-    shutil.copytree("mesh_generation/mesh", path)
+    try:
+        shutil.copytree("mesh_generation/mesh", path)
+    except:
+        print('Folder exists')
 
     plt.subplots_adjust(left=0.01, right=0.99, wspace=0.05, top=0.99, bottom=0.01)
 
@@ -759,7 +787,6 @@ def create_mesh(x, z, path: str):
     axs_i[1].set_zlabel("z", fontsize=14)
     axs_i[2].set_ylabel("y", fontsize=14)
     axs_i[2].set_xlabel("x", fontsize=14)
-    plt.show()
     plt.savefig(path + "/pre-render.png", dpi=600)
 
     col = (212 / 255, 41 / 255, 144 / 255)
