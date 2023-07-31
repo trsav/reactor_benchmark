@@ -19,6 +19,11 @@ RUN yum -y install bzip2 && \
     echo "micromamba activate benchmark_env" >> ~/.bashrc
 RUN yum -y install sqlite
 
+RUN echo "export WM_COMPILER_TYPE=ThirdParty" >> ~/.bashrc && \
+    echo "export WM_COMPILER=Gcc48" >> ~/.bashrc && \
+    echo "export WM_MPLIB=OPENMPI" >> ~/.bashrc && \
+    echo "export PATH=/root/micromamba/envs/benchmark_env/bin:${PATH}" >> ~/.bashrc
+
 ENV PATH=/root/micromamba/envs/benchmark_env/bin:${PATH}
 
 WORKDIR /root/mesh_generation
@@ -26,10 +31,14 @@ RUN git clone https://github.com/damogranlabs/classy_blocks.git
 WORKDIR classy_blocks
 RUN git checkout 7aad805
 WORKDIR /root
-# Set environment variables
+
+
 ENV FLASK_APP=reactor_design_problem/functions.py 
 ENV FLASK_RUN_HOST=0.0.0.0
 ENV FLASK_RUN_PORT=5001
 
-# Run the command to start uWSGI
-CMD ["flask", "run"]
+CMD bash -c "source /opt/OpenFOAM/OpenFOAM-v1906/etc/bashrc && flask run"
+
+
+# just run interactive shell for now
+# CMD ["/bin/bash"]

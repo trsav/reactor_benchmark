@@ -1,7 +1,9 @@
 #!/bin/bash
 cd "${0%/*}" || exit
-source $WM_PROJECT_DIR/bin/tools/RunFunctions
-source $WM_PROJECT_DIR/bin/tools/CleanFunctions
+
+source /opt/OpenFOAM/OpenFOAM-v1906/etc/bashrc
+source /opt/OpenFOAM/OpenFOAM-v1906/bin/tools/RunFunctions
+source /opt/OpenFOAM/OpenFOAM-v1906/bin/tools/CleanFunctions
 
 cleanCase
 touch case.foam

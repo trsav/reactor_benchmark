@@ -1,6 +1,6 @@
 import sys
 import os
-
+import subprocess
 
 sys.path.insert(1, os.path.join(sys.path[0], ".."))
 sys.path.insert(1, "mesh_generation/classy_blocks/src/")
@@ -986,6 +986,7 @@ def create_mesh(x, z, path: str):
     print("Writing geometry...")
     mesh.write(output_path=os.path.join(path, "system", "blockMeshDict"), geometry=None)
     print("Running blockMesh...")
-    os.system("chmod +x " + path + "/Allrun.mesh")
-    os.system(path + "/Allrun.mesh")
+    command = path+' /Allmesh.sh'
+    process = subprocess.Popen(command, stdout=subprocess.PIPE, shell=True)
+    out, err = process.communicate()
     return
