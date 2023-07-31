@@ -21,7 +21,7 @@
     cd reactor_benchmark
     ```
 
-2. **Build the Docker image.**
+2. **Build the Docker image. This will take approximately 10 minutes**
     ```bash
     docker build -t benchmark .
     ```
