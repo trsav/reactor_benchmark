@@ -14,6 +14,7 @@
 </div>
 
 ## Quickstart
+0. **[Install Docker](https://docs.docker.com/engine/install/)**
 
 1. **Clone the repository.**
     ```bash
