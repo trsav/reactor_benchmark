@@ -13,7 +13,7 @@
     <img src="images/reactors.png" alt="Reactor Designs" title="reactor_designs" width="100%" />
 </div>
 
-## Quickstart
+## Quickstart (15 minutes) 
 0. **[Install Docker](https://docs.docker.com/engine/install/)**
 
 1. **Clone the repository.**
@@ -63,35 +63,17 @@ Refer to the function description in the code for more information about the `x`
 | ```/full```  | A combination of coil path and cross section.|  $\mathbf{x}\in [0,1]^{47}$ | $\mathbf{z}\in[0,1]^2$           |
 | ```/full_pulsed_flow```  | A combination of coil path, cross section, and pulsed-flow operating condition.|  $\mathbf{x}\in [0,1]^{50}$ | $\mathbf{z}\in[0,1]^2$           |
 
+## System Requirements
+
+- Docker (if using Windows, you will need to install WSL)
+- This software has been tested on a 2019 Macbook Pro, and a Windows PC.
+- 
+
 ## Key Features
 - **Flexible**: Supports both single and multi-fidelity evaluations.
 - **Parallelizable**: Can adjust CPU usage for parallel simulations.
 - **Easy to use**: Accessible via a REST API.
 
-## Citations
-Feel free to cite these relevant works if you use this benchmark
-```
-@misc{dgp_savage,
-  doi = {10.48550/ARXIV.2210.17213},
-  author = {Savage,  Tom and Basha,  Nausheen and Matar,  Omar and Chanona,  Ehecatl Antonio Del-Rio},
-  keywords = {Computational Engineering,  Finance,  and Science (cs.CE),  Machine Learning (cs.LG),  FOS: Computer and information sciences,  FOS: Computer and information sciences},
-  title = {Deep Gaussian Process-based Multi-fidelity Bayesian Optimization for Simulated Chemical Reactors},
-  publisher = {arXiv},
-  year = {2022},
-  copyright = {Creative Commons Attribution Non Commercial Share Alike 4.0 International}
-}
-
-@misc{mfbo_savage,
-  doi = {10.48550/ARXIV.2305.00710},
-  author = {Savage,  Tom and Basha,  Nausheen and McDonough,  Jonathan and Matar,  Omar K and Chanona,  Ehecatl Antonio del Rio},
-  keywords = {Computational Engineering,  Finance,  and Science (cs.CE),  Optimization and Control (math.OC),  FOS: Computer and information sciences,  FOS: Computer and information sciences,  FOS: Mathematics,  FOS: Mathematics},
-  title = {Multi-Fidelity Data-Driven Design and Analysis of Reactor and Tube Simulations},
-  publisher = {arXiv},
-  year = {2023},
-  copyright = {Creative Commons Attribution Non Commercial Share Alike 4.0 International}
-}
-
-```
 
 ## License
 This project is licensed under the terms of the MIT license.
