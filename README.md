@@ -26,6 +26,7 @@
     ```bash
     docker build -t benchmark .
     ```
+    If this step fails (i.e. ```ERROR: error getting credentials - err: exit status 1, out: ```) you may need to log into Docker first using ```$ docker login``` 
 
 3. **Run the Docker image.**
     ```bash
