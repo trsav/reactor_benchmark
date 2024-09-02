@@ -19,7 +19,7 @@ dependencies:
     - markupsafe
     - ml-collections
     - matplotlib
-    - numpy
+    - numpy==1.21
     - imageio
     - optax
     - pre-commit

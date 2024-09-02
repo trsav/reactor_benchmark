@@ -13,12 +13,9 @@
     <img src="images/reactors.png" alt="Reactor Designs" title="reactor_designs" width="100%" />
 </div>
 
-## Quickstart (15 minutes) 
+WARNING: _This has not been updated to work with Apple Silicon_
 
--1. **[If running with Apple Silicon (M-series) ensure Docker is set up to use Rosetta 
-    ```bash
-    softwareupdate --install-rosetta
-    ```
+## Quickstart (15 minutes) 
 
 0. **[Install Docker](https://docs.docker.com/engine/install/)**
 
