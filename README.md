@@ -14,6 +14,12 @@
 </div>
 
 ## Quickstart (15 minutes) 
+
+-1. **[If running with Apple Silicon (M-series) ensure Docker is set up to use Rosetta 
+    ```bash
+    softwareupdate --install-rosetta
+    ```
+
 0. **[Install Docker](https://docs.docker.com/engine/install/)**
 
 1. **Clone the repository.**

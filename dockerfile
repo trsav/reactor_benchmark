@@ -1,6 +1,10 @@
 FROM mambaorg/micromamba:1.4.8 as micromamba
 FROM hfdresearch/swak4foamandpyfoam:latest-v1906
 USER root
+
+RUN sed -i 's/mirrorlist/#mirrorlist/g' /etc/yum.repos.d/CentOS-* && \
+sed -i 's|#baseurl=http://mirror.centos.org|baseurl=http://vault.centos.org|g' /etc/yum.repos.d/CentOS-* && \ 
+sed -i 's/^mirrorlist=/#mirrorlist=/g' /etc/yum.repos.d/CentOS-* 
 RUN yum -y update 
 RUN yum -y install gcc g++ make binutils openssl-devel flex m4 subversion git mercurial wget python3-pip bear && yum clean all
 

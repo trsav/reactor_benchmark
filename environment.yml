@@ -27,7 +27,7 @@ dependencies:
     - pyfoam
     - pytest
     - pyyaml
-    - scipy
+    - scipy<=1.12.0
     - toml
     - toolz
     - tqdm
